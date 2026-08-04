@@ -16,9 +16,10 @@ if database_url.startswith('sqlite:'):
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 
 # Segurança
-secret_key = os.getenv('SECRET_KEY')
-if not secret_key or secret_key == 'dev-secret-key':
-    raise ValueError('SECRET_KEY não configurada ou usando default. Configure uma chave segura em .env')
+secret_key = os.getenv('SECRET_KEY', 'dev-secret-key-desenvolvimento')
+# Validação apenas em produção (quando debug=false)
+if secret_key == 'dev-secret-key-desenvolvimento' and os.getenv('FLASK_DEBUG', 'false').lower() == 'false':
+    raise ValueError('SECRET_KEY não configurada. Configure uma chave segura em .env para produção')
 app.config['SECRET_KEY'] = secret_key
 app.config['GESTAO_PASSWORD'] = os.getenv('GESTAO_PASSWORD', 'muva2026')
 

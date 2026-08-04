@@ -5,21 +5,26 @@ Executar uma vez antes de arrancar a aplicação em produção.
 """
 
 import os
+import sys
 from dotenv import load_dotenv
-from app import app, db
 
 load_dotenv()
+
+# Garantir que DATABASE_URL é local para desenvolvimento
+if os.getenv('DATABASE_URL', '').startswith('/var/www'):
+    print("⚠️ AVISO: DATABASE_URL apontando para caminho de produção.")
+    print("Para desenvolvimento local, remova ou mude DATABASE_URL no .env")
+    sys.exit(1)
+
+from app import app, db
 
 def init_database():
     """Inicializar a base de dados com as tabelas."""
     with app.app_context():
-        print("Criando tabelas da base de dados...")
+        print(f"Criando base de dados em: {os.getenv('DATABASE_URL', 'sqlite:///mci_indicadores.db')}")
         db.create_all()
         print("✓ Base de dados inicializada com sucesso!")
-
-        # Verificar número de indicadores carregados
-        from models import IndicadorDado, CicloRevisao
-        print(f"✓ Tabelas criadas: CicloRevisao, IndicadorDado")
+        print("✓ Tabelas criadas: CicloRevisao, IndicadorDado")
 
 if __name__ == '__main__':
     init_database()
