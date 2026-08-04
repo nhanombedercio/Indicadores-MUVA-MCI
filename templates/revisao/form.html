@@ -2,160 +2,210 @@
 
 {% block title %}Revisão - MCI Indicadores{% endblock %}
 
-{% block extra_css %}
-<style>
-    .card-indicador {
-        border-left: 3px solid #0dcaf0;
-        margin-bottom: 1rem;
-    }
-    .card-indicador.editado {
-        border-left-color: #ffc107;
-    }
-    .card-indicador.confirmado {
-        border-left-color: #198754;
-    }
-    .card-indicador.eliminacao {
-        border-left-color: #dc3545;
-    }
-    .badge-tipo {
-        font-size: 0.75rem;
-    }
-    .progress-confirmacao {
-        height: 25px;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h1>{{ ciclo.titulo }}</h1>
-            <p class="text-muted">Revisão de Indicadores MCI</p>
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>🔍 Revisão de Indicadores</h1>
+        <h5 style="color: #666; margin-top: 0.5rem;">{{ ciclo.titulo }}</h5>
+    </div>
+</div>
+
+<form method="POST" action="{{ url_for('revisao.submeter', token=ciclo.token) }}" id="formRevisao" class="needs-validation" novalidate>
+
+    <!-- SEÇÃO DE INFORMAÇÃO DO DIRECTOR -->
+    <div class="card mb-4">
+        <div class="card-header">
+            👤 Sua Informação
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="nome_director" class="form-label">Seu Nome Completo</label>
+                        <input type="text" class="form-control" id="nome_director" name="nome_director"
+                               placeholder="ex: Dr. João Silva" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="observacoes_director" class="form-label">Observações Gerais (Opcional)</label>
+                <textarea class="form-control" id="observacoes_director" name="observacoes_director" rows="3"
+                          placeholder="Deixe observações gerais sobre esta revisão..."></textarea>
+            </div>
         </div>
     </div>
 
-    <form method="POST" action="{{ url_for('revisao.submeter', token=ciclo.token) }}" id="formRevisao" class="needs-validation" novalidate>
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label for="nome_director" class="form-label">Seu Nome</label>
-                    <input type="text" class="form-control" id="nome_director" name="nome_director" required>
+    <!-- BARRA DE PROGRESSO -->
+    <div class="card mb-4">
+        <div class="card-header">
+            📊 Progresso de Confirmação
+        </div>
+        <div class="card-body">
+            <div class="progress" style="height: 30px; margin-bottom: 1rem;">
+                <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%">
+                    <span id="progressText" style="color: white; font-weight: 600;">0%</span>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label for="observacoes_director" class="form-label">Observações Gerais (opcional)</label>
-                    <textarea class="form-control" id="observacoes_director" name="observacoes_director" rows="2" placeholder="Observações sobre este ciclo de revisão"></textarea>
-                </div>
+            <small class="text-muted">
+                <strong id="progressCount">0</strong> de <strong>{{ ciclo.indicadores|length }}</strong> indicadores confirmados
+            </small>
+        </div>
+    </div>
+
+    <!-- INDICADORES POR GRUPO -->
+    {% for grupo_id, indicadores in indicadores_por_grupo.items() %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <strong>{{ grupo_id }}</strong>
+                <span class="badge badge-primary">{{ indicadores|length }} indicadores</span>
             </div>
         </div>
-
-        <div class="mb-4">
-            <label class="form-label">Progresso de Confirmação</label>
-            <div class="progress progress-confirmacao">
-                <div id="progressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
-            </div>
-            <small class="text-muted" id="progressText">0 / {{ ciclo.indicadores|length }} confirmados</small>
-        </div>
-
-        {% for grupo_id, indicadores in indicadores_por_grupo.items() %}
-        <div class="card mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0">{{ grupo_id }}</h5>
-            </div>
-            <div class="card-body">
-                {% for ind in indicadores %}
-                <div class="card card-indicador" id="card_{{ ind.id }}">
-                    <div class="card-header bg-white border-0 pb-2">
-                        <div class="row align-items-center">
-                            <div class="col-md-8">
-                                <span class="badge badge-tipo bg-primary">{{ ind.codigo }}</span>
-                                <span class="badge badge-tipo bg-secondary">{{ 'Monitoria' if ind.tipo == 'M' else 'Avaliação' }}</span>
-                                <span id="badge_status_{{ ind.id }}"></span>
-                            </div>
-                            <div class="col-md-4 text-end">
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <button type="button" class="btn btn-outline-success" onclick="toggleConfirmar({{ ind.id }})">✓ Confirmar</button>
-                                    <button type="button" class="btn btn-outline-primary" onclick="toggleEditar({{ ind.id }})">✎ Editar</button>
-                                </div>
-                            </div>
+        <div class="card-body">
+            {% for ind in indicadores %}
+            <div class="card-indicador mb-3" id="card_{{ ind.id }}">
+                <div class="card-indicador-header">
+                    <div class="card-indicador-titulo">
+                        <span class="card-indicador-codigo">{{ ind.codigo }}</span>
+                        <div>
+                            <strong>{{ ind.nome_original }}</strong><br>
+                            <small style="color: #666;">{{ ind.definicao[:70] }}</small>
                         </div>
                     </div>
+                    <div>
+                        <span id="badge_tipo_{{ ind.id }}" class="badge badge-info">
+                            {{ 'Monitoria' if ind.tipo == 'M' else 'Avaliação' }}
+                        </span>
+                        <span id="badge_status_{{ ind.id }}"></span>
+                    </div>
+                </div>
 
-                    <div class="card-body">
-                        <h6 class="card-title">{{ ind.nome_original }}</h6>
-                        <small class="text-muted d-block mb-2">{{ ind.definicao }}</small>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <small><strong>Meta:</strong> {{ ind.meta_original }}</small>
-                            </div>
-                            <div class="col-md-6">
-                                <small><strong>Resultado Actual:</strong> {{ ind.resultado_actual or '—' }}</small>
-                            </div>
-                        </div>
-
+                <div class="card-indicador-body">
+                    <!-- DADOS PREENCHIDOS PELA EQUIPA (LEITURA) -->
+                    <div id="dados_equipa_{{ ind.id }}" style="background: #f9f9f9; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
                         <div class="row">
-                            <div class="col-md-6">
-                                <small><strong>Projectos:</strong> {{ ind.projectos or '—' }}</small>
+                            <div class="col-md-3">
+                                <small style="color: #666;">
+                                    <strong>Meta</strong><br>
+                                    <span style="font-size: 1.1rem; color: var(--muva-primary); font-weight: 700;">{{ ind.meta_original }}</span>
+                                </small>
+                            </div>
+                            <div class="col-md-3">
+                                <small style="color: #666;">
+                                    <strong>Resultado Actual</strong><br>
+                                    <span style="font-size: 1.1rem; color: var(--muva-primary); font-weight: 700;">{{ ind.resultado_actual or '—' }}</span>
+                                </small>
                             </div>
                             <div class="col-md-6">
-                                <small><strong>Notas da Equipa:</strong> {{ ind.notas_equipa or '—' }}</small>
+                                <small style="color: #666;">
+                                    <strong>Projectos</strong><br>
+                                    {% if ind.projectos %}
+                                        {% for proj in ind.projectos.split(',') %}
+                                        <span class="badge badge-primary" style="margin-right: 0.25rem;">{{ proj.strip() }}</span>
+                                        {% endfor %}
+                                    {% else %}
+                                    <em>Nenhum projecto associado</em>
+                                    {% endif %}
+                                </small>
                             </div>
                         </div>
 
-                        <!-- Seção de Edição -->
-                        <div id="edicao_{{ ind.id }}" style="display: none;" class="mt-3 pt-3 border-top">
-                            <h6>Editar Indicador</h6>
-
-                            <div class="mb-3">
-                                <label class="form-label">Nome do Indicador</label>
-                                <textarea class="form-control" name="nome_editado_{{ ind.id }}" rows="3">{{ ind.nome_original }}</textarea>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Meta</label>
-                                <input type="text" class="form-control" name="meta_editada_{{ ind.id }}" value="{{ ind.meta_original }}">
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Notas Específicas do Director</label>
-                                <textarea class="form-control" name="notas_director_{{ ind.id }}" rows="2" placeholder="Observações sobre este indicador"></textarea>
-                            </div>
-
-                            <button type="button" class="btn btn-sm btn-primary" onclick="guardarEdicao({{ ind.id }})">Guardar Edição</button>
+                        {% if ind.notas_equipa %}
+                        <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e0e0e0;">
+                            <small style="color: #666;">
+                                <strong>📝 Notas da Equipa:</strong> {{ ind.notas_equipa }}
+                            </small>
                         </div>
-
-                        <!-- Seção de Eliminação -->
-                        <div class="mt-3 pt-3 border-top">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="eliminacao_{{ ind.id }}" name="propor_eliminacao_{{ ind.id }}" onchange="toggleEliminacao({{ ind.id }})">
-                                <label class="form-check-label" for="eliminacao_{{ ind.id }}">
-                                    Propor eliminação deste indicador
-                                </label>
-                            </div>
-
-                            <div id="justificacao_{{ ind.id }}" style="display: none;" class="mt-2">
-                                <label class="form-label">Justificação para Eliminação</label>
-                                <textarea class="form-control" name="justificacao_eliminacao_{{ ind.id }}" rows="2" placeholder="Explique por que este indicador deve ser eliminado"></textarea>
-                            </div>
-                        </div>
-
-                        <input type="hidden" id="confirmado_{{ ind.id }}" name="confirmado_{{ ind.id }}">
+                        {% endif %}
                     </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endfor %}
 
-        <div class="mt-4">
-            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">Submeter Revisão</button>
-            <a href="javascript:history.back()" class="btn btn-secondary btn-lg">Cancelar</a>
+                    <!-- ACÇÕES DO DIRECTOR -->
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-sm btn-success" id="btn_confirmar_{{ ind.id }}"
+                                onclick="toggleConfirmar({{ ind.id }})">
+                            ✓ Confirmar
+                        </button>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="toggleEditar({{ ind.id }})">
+                            ✎ Editar / Adicionar Notas
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="toggleEliminacao({{ ind.id }})">
+                            ⚠ Propor Eliminação
+                        </button>
+                    </div>
+
+                    <!-- SEÇÃO DE EDIÇÃO (INICIALMENTE OCULTA) -->
+                    <div id="edicao_{{ ind.id }}" style="display: none; background: #fffbf0; padding: 1rem; border-radius: 6px; border-left: 3px solid var(--muva-secondary);">
+                        <h6 style="margin-top: 0;">✎ Editar Indicador</h6>
+
+                        <div class="mb-3">
+                            <label class="form-label"><small>Nome do Indicador</small></label>
+                            <textarea class="form-control" name="nome_editado_{{ ind.id }}" rows="2">{{ ind.nome_original }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"><small>Meta</small></label>
+                            <input type="text" class="form-control" name="meta_editada_{{ ind.id }}" value="{{ ind.meta_original }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"><small>Suas Notas sobre este Indicador</small></label>
+                            <textarea class="form-control" name="notas_director_{{ ind.id }}" rows="2"
+                                      placeholder="Observações específicas sobre este indicador..."></textarea>
+                        </div>
+
+                        <button type="button" class="btn btn-sm btn-success" onclick="guardarEdicao({{ ind.id }})">
+                            ✓ Guardar Edição
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="toggleEditar({{ ind.id }})">
+                            ✗ Cancelar
+                        </button>
+                    </div>
+
+                    <!-- SEÇÃO DE ELIMINAÇÃO (INICIALMENTE OCULTA) -->
+                    <div id="eliminacao_{{ ind.id }}" style="display: none; background: #fff5f5; padding: 1rem; border-radius: 6px; border-left: 3px solid var(--danger);">
+                        <h6 style="color: var(--danger); margin-top: 0;">⚠ Propor Eliminação deste Indicador</h6>
+
+                        <div class="mb-3">
+                            <label class="form-label"><small>Justificação para Eliminação</small></label>
+                            <textarea class="form-control" name="justificacao_eliminacao_{{ ind.id }}" rows="3"
+                                      placeholder="Explique por que este indicador deve ser eliminado..."
+                                      required></textarea>
+                        </div>
+
+                        <button type="button" class="btn btn-sm btn-danger" onclick="confirmarEliminacao({{ ind.id }})">
+                            ✓ Confirmar Eliminação
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="toggleEliminacao({{ ind.id }})">
+                            ✗ Cancelar
+                        </button>
+                    </div>
+
+                    <!-- INPUTS OCULTOS -->
+                    <input type="hidden" id="confirmado_{{ ind.id }}" name="confirmado_{{ ind.id }}">
+                    <input type="hidden" id="propor_eliminacao_{{ ind.id }}" name="propor_eliminacao_{{ ind.id }}">
+                </div>
+            </div>
+            {% endfor %}
         </div>
-    </form>
-</div>
+    </div>
+    {% endfor %}
+
+    <!-- BOTÃO DE SUBMISSÃO -->
+    <div class="card">
+        <div class="card-body" style="text-align: center;">
+            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                ✓ Submeter Revisão
+            </button>
+            <button type="button" class="btn btn-secondary btn-lg ms-3" onclick="window.history.back()">
+                ← Cancelar
+            </button>
+            <p class="text-muted mt-3" style="font-size: 0.9rem;">
+                Ao submeter, esta revisão será guardada e não poderá ser alterada.
+            </p>
+        </div>
+    </div>
+</form>
 
 <script>
 const totalIndicadores = {{ ciclo.indicadores|length }};
@@ -164,7 +214,8 @@ let confirmadosCount = 0;
 function atualizarProgresso() {
     const percentual = Math.round((confirmadosCount / totalIndicadores) * 100);
     document.getElementById('progressBar').style.width = percentual + '%';
-    document.getElementById('progressText').textContent = confirmadosCount + ' / ' + totalIndicadores + ' confirmados';
+    document.getElementById('progressText').textContent = percentual + '%';
+    document.getElementById('progressCount').textContent = confirmadosCount;
 }
 
 function toggleConfirmar(id) {
@@ -173,15 +224,28 @@ function toggleConfirmar(id) {
     checkbox.value = novoValor;
     checkbox.checked = novoValor === 'on';
 
+    const card = document.getElementById('card_' + id);
+    const btn = document.getElementById('btn_confirmar_' + id);
+
     if (novoValor === 'on') {
         confirmadosCount++;
-        document.getElementById('card_' + id).classList.add('confirmado');
-        document.getElementById('badge_status_' + id).innerHTML = '<span class="badge bg-success">✓ Confirmado</span>';
+        card.classList.add('confirmado');
+        document.getElementById('badge_status_' + id).innerHTML = '<span class="badge badge-success">✓ Confirmado</span>';
+        btn.classList.add('active');
+        btn.style.background = 'var(--success)';
     } else {
         confirmadosCount--;
-        document.getElementById('card_' + id).classList.remove('confirmado');
+        card.classList.remove('confirmado');
         document.getElementById('badge_status_' + id).innerHTML = '';
+        btn.classList.remove('active');
+        btn.style.background = '';
     }
+
+    // Remover eliminação se estava marcada
+    document.getElementById('propor_eliminacao_' + id).value = '';
+    document.getElementById('eliminacao_' + id).style.display = 'none';
+    card.classList.remove('eliminacao');
+
     atualizarProgresso();
 }
 
@@ -192,39 +256,39 @@ function toggleEditar(id) {
 
 function guardarEdicao(id) {
     document.getElementById('edicao_' + id).style.display = 'none';
-    document.getElementById('card_' + id).classList.add('editado');
-    if (!document.getElementById('badge_status_' + id).innerHTML.includes('bg-success')) {
-        document.getElementById('badge_status_' + id).innerHTML = '<span class="badge bg-warning text-dark">✎ Editado</span>';
+    const card = document.getElementById('card_' + id);
+    card.classList.add('editado');
+    if (!document.getElementById('badge_status_' + id).innerHTML.includes('badge-success')) {
+        document.getElementById('badge_status_' + id).innerHTML = '<span class="badge badge-warning">✎ Editado</span>';
     }
 }
 
 function toggleEliminacao(id) {
-    const checkbox = document.getElementById('eliminacao_' + id);
-    const justificacao = document.getElementById('justificacao_' + id);
-    const card = document.getElementById('card_' + id);
+    const secao = document.getElementById('eliminacao_' + id);
+    secao.style.display = secao.style.display === 'none' ? 'block' : 'none';
+}
 
-    if (checkbox.checked) {
-        justificacao.style.display = 'block';
-        card.classList.add('eliminacao');
-        document.getElementById('badge_status_' + id).innerHTML = '<span class="badge bg-danger">⚠ Eliminação</span>';
-        document.getElementById('confirmado_' + id).value = '';
-        confirmadosCount--;
-        atualizarProgresso();
-    } else {
-        justificacao.style.display = 'none';
-        card.classList.remove('eliminacao');
-        if (document.getElementById('badge_status_' + id).innerHTML.includes('bg-success')) {
-            document.getElementById('badge_status_' + id).innerHTML = '<span class="badge bg-success">✓ Confirmado</span>';
-        } else {
-            document.getElementById('badge_status_' + id).innerHTML = '';
-        }
-    }
+function confirmarEliminacao(id) {
+    const checkbox = document.getElementById('propor_eliminacao_' + id);
+    checkbox.value = 'on';
+    checkbox.checked = true;
+
+    const card = document.getElementById('card_' + id);
+    card.classList.add('eliminacao');
+    document.getElementById('badge_status_' + id).innerHTML = '<span class="badge badge-danger">⚠ Para Eliminar</span>';
+
+    // Remover confirmação se estava marcada
+    document.getElementById('confirmado_' + id).value = '';
+    confirmadosCount--;
+    atualizarProgresso();
+
+    document.getElementById('eliminacao_' + id).style.display = 'none';
 }
 
 document.getElementById('formRevisao').addEventListener('submit', function(e) {
     if (!document.getElementById('nome_director').value.trim()) {
         e.preventDefault();
-        alert('Nome do director é obrigatório');
+        alert('Por favor, preencha o seu nome');
         document.getElementById('nome_director').focus();
         return false;
     }
@@ -232,11 +296,11 @@ document.getElementById('formRevisao').addEventListener('submit', function(e) {
     const checkboxes = document.querySelectorAll('input[name^="propor_eliminacao_"]');
     for (let checkbox of checkboxes) {
         if (checkbox.checked) {
-            const id = checkbox.name.replace('propor_eliminacao_', '');
+            const id = checkbox.id.replace('propor_eliminacao_', '');
             const justificacao = document.querySelector('textarea[name="justificacao_eliminacao_' + id + '"]').value.trim();
             if (!justificacao) {
                 e.preventDefault();
-                alert('Justificação obrigatória para eliminação do indicador');
+                alert('Justificação obrigatória para proposta de eliminação');
                 return false;
             }
         }

@@ -3,29 +3,32 @@
 {% block title %}Revisão Submetida - MCI Indicadores{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-6">
-        <div class="card text-center">
-            <div class="card-body py-5">
-                <h1 class="text-success mb-3">✓ Obrigado!</h1>
-                <h4 class="card-title mb-3">Revisão Submetida com Sucesso</h4>
-                <p class="card-text mb-3">
-                    {{ ciclo.titulo }}<br>
-                    <small class="text-muted">Revisto por {{ ciclo.nome_director }} em {{ ciclo.data_revisao.strftime('%d/%m/%Y às %H:%M') }}</small>
-                </p>
+<div style="display: flex; align-items: center; justify-content: center; min-height: 70vh;">
+    <div style="text-align: center; max-width: 500px;">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">✓</div>
+        <h1 style="color: var(--success); margin-bottom: 0.5rem;">Revisão Submetida!</h1>
+        <h5 style="color: #666; margin-bottom: 2rem;">Obrigado pela revisão</h5>
 
-                {% if ciclo.observacoes_director %}
-                <div class="alert alert-info mt-3 text-start">
-                    <strong>Suas Observações:</strong><br>
-                    {{ ciclo.observacoes_director }}
-                </div>
-                {% endif %}
-
-                <hr class="my-4">
-
-                <p class="text-muted">A equipa MUVA/MCI receberá a sua revisão e poderá proceder com as próximas etapas.</p>
-            </div>
+        <div style="background: #f5f5f5; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; text-align: left;">
+            <small style="color: #666;">
+                <strong>Ciclo:</strong> {{ ciclo.titulo }}<br>
+                <strong>Revisor:</strong> {{ ciclo.nome_director }}<br>
+                <strong>Data de Revisão:</strong> {{ ciclo.data_revisao.strftime('%d/%m/%Y às %H:%M') }}<br>
+                <strong>Total de Indicadores Revistos:</strong> {{ ciclo.indicadores|length }}
+            </small>
         </div>
+
+        {% if ciclo.observacoes_director %}
+        <div style="background: #e8f4f8; border-left: 4px solid var(--info); padding: 1rem; border-radius: 4px; margin-bottom: 2rem; text-align: left;">
+            <strong style="color: var(--info);">💭 Suas Observações:</strong><br>
+            <small style="color: #333; margin-top: 0.5rem; display: block;">{{ ciclo.observacoes_director }}</small>
+        </div>
+        {% endif %}
+
+        <p style="color: #666; font-size: 0.95rem;">
+            A equipa MUVA/MCI foi notificada desta revisão e poderá proceder com as próximas etapas.<br>
+            <strong>Esta página pode ser fechada.</strong>
+        </p>
     </div>
 </div>
 {% endblock %}
