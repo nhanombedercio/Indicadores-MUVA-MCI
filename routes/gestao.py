@@ -66,6 +66,7 @@ def ciclo_novo():
         return redirect(url_for('gestao.login'))
 
     if request.method == 'POST':
+        import json
         titulo = request.form.get('titulo', '').strip()
 
         if not titulo:
@@ -82,6 +83,15 @@ def ciclo_novo():
 
         for grupo in INDICADORES:
             for ind_data in grupo['indicadores']:
+                resultado = request.form.get(f'resultado_actual_{ind_data["codigo"]}', '').strip()
+                projectos_json = request.form.get(f'projectos_json_{ind_data["codigo"]}', '[]')
+
+                try:
+                    projectos_list = json.loads(projectos_json)
+                    projectos = ', '.join(projectos_list) if projectos_list else None
+                except:
+                    projectos = None
+
                 ind = IndicadorDado(
                     ciclo_id=ciclo.id,
                     codigo=ind_data['codigo'],
@@ -90,6 +100,8 @@ def ciclo_novo():
                     nome_original=ind_data['nome'],
                     definicao=ind_data['definicao'],
                     meta_original=ind_data['meta'],
+                    resultado_actual=resultado if resultado else None,
+                    projectos=projectos,
                 )
                 db.session.add(ind)
 
@@ -128,13 +140,20 @@ def ciclo_editar(id):
         return redirect(url_for('gestao.ciclo_detalhe', id=id))
 
     if request.method == 'POST':
+        import json
         for ind in ciclo.indicadores:
             resultado_actual = request.form.get(f'resultado_actual_{ind.id}', '').strip()
-            projectos = request.form.get(f'projectos_{ind.id}', '').strip()
+            projectos_json = request.form.get(f'projectos_json_{ind.id}', '[]')
             notas_equipa = request.form.get(f'notas_equipa_{ind.id}', '').strip()
 
+            try:
+                projectos_list = json.loads(projectos_json)
+                projectos = ', '.join(projectos_list) if projectos_list else None
+            except:
+                projectos = None
+
             ind.resultado_actual = resultado_actual if resultado_actual else None
-            ind.projectos = projectos if projectos else None
+            ind.projectos = projectos
             ind.notas_equipa = notas_equipa if notas_equipa else None
 
         db.session.commit()

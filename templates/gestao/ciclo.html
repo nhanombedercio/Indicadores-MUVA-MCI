@@ -5,107 +5,164 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-8">
-        <h1>{{ ciclo.titulo }}</h1>
-        <small class="text-muted">
-            Criado em {{ ciclo.criado_em.strftime('%d/%m/%Y %H:%M') }}
+        <h1>📋 {{ ciclo.titulo }}</h1>
+        <p class="text-muted">
+            Criado em {{ ciclo.criado_em.strftime('%d/%m/%Y às %H:%M') }}
             | Estado:
             {% if ciclo.estado == 'revisto' %}
-                <span class="badge bg-success">Revisto</span>
-                {% if ciclo.nome_director %} por {{ ciclo.nome_director }}{% endif %}
-                em {{ ciclo.data_revisao.strftime('%d/%m/%Y %H:%M') }}
+                <span class="badge badge-success">✓ Revisto</span>
+                {% if ciclo.nome_director %} por <strong>{{ ciclo.nome_director }}</strong>{% endif %}
+                em {{ ciclo.data_revisao.strftime('%d/%m/%Y às %H:%M') }}
             {% else %}
-                <span class="badge bg-warning text-dark">Pendente</span>
+                <span class="badge badge-warning">⏳ Pendente</span>
             {% endif %}
-        </small>
+        </p>
     </div>
     <div class="col-md-4 text-end">
         <a href="{{ url_for('gestao.index') }}" class="btn btn-secondary">← Voltar</a>
         {% if ciclo.estado == 'pendente' %}
-            <a href="{{ url_for('gestao.ciclo_link', id=ciclo.id) }}" class="btn btn-info">Link</a>
-            <a href="{{ url_for('gestao.ciclo_editar', id=ciclo.id) }}" class="btn btn-warning">Editar</a>
+            <a href="{{ url_for('gestao.ciclo_link', id=ciclo.id) }}" class="btn btn-info">🔗 Link</a>
+            <a href="{{ url_for('gestao.ciclo_editar', id=ciclo.id) }}" class="btn btn-warning">✎ Editar</a>
         {% endif %}
-        <a href="{{ url_for('gestao.ciclo_exportar', id=ciclo.id) }}" class="btn btn-success">Excel</a>
+        <a href="{{ url_for('gestao.ciclo_exportar', id=ciclo.id) }}" class="btn btn-success">📊 Excel</a>
     </div>
 </div>
 
 {% if ciclo.estado == 'revisto' and ciclo.observacoes_director %}
-<div class="alert alert-info">
-    <strong>Observações do Director:</strong> {{ ciclo.observacoes_director }}
+<div class="alert alert-info mb-4">
+    <strong>💭 Observações do Director:</strong> {{ ciclo.observacoes_director }}
 </div>
 {% endif %}
 
-{% for grupo_id, indicadores in indicadores_por_grupo.items() %}
 <div class="card mb-4">
-    <div class="card-header bg-light">
-        <h5 class="mb-0">{{ grupo_id }}</h5>
+    <div class="card-header">
+        📊 Resumo do Ciclo
     </div>
     <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-sm table-hover">
-                <thead>
-                    <tr>
-                        <th>Código</th>
-                        <th>Tipo</th>
-                        <th>Nome</th>
-                        <th>Meta</th>
-                        <th>Resultado</th>
-                        <th>Projectos</th>
-                        <th>Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for ind in indicadores %}
-                    <tr>
-                        <td><small><strong>{{ ind.codigo }}</strong></small></td>
-                        <td><small>{{ 'M' if ind.tipo == 'M' else 'A' }}</small></td>
-                        <td>
-                            <small>
-                                {{ ind.nome_original }}
-                                {% if ind.foi_editado_pelo_director %}
-                                <br><em class="text-warning">✎ Editado: {{ ind.nome_editado }}</em>
-                                {% endif %}
-                            </small>
-                        </td>
-                        <td>
-                            <small>
-                                {{ ind.meta_original }}
-                                {% if ind.meta_editada %}
-                                <br><em class="text-warning">✎ {{ ind.meta_editada }}</em>
-                                {% endif %}
-                            </small>
-                        </td>
-                        <td><small>{{ ind.resultado_actual or '—' }}</small></td>
-                        <td><small>{{ ind.projectos or '—' }}</small></td>
-                        <td>
-                            {% if ind.propor_eliminacao %}
-                                <span class="badge bg-danger">⚠ Eliminação</span>
-                            {% elif ind.confirmado %}
-                                <span class="badge bg-success">✓ Confirmado</span>
-                            {% elif ind.foi_editado_pelo_director %}
-                                <span class="badge bg-warning text-dark">✎ Editado</span>
-                            {% else %}
-                                <span class="badge bg-secondary">—</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% if ciclo.estado == 'revisto' and (ind.foi_editado_pelo_director or ind.propor_eliminacao or ind.notas_director) %}
-                    <tr class="table-light">
-                        <td colspan="7">
-                            <small>
-                                {% if ind.notas_director %}
-                                <strong>Notas do Director:</strong> {{ ind.notas_director }}<br>
-                                {% endif %}
-                                {% if ind.propor_eliminacao %}
-                                <strong>Justificação para eliminação:</strong> {{ ind.justificacao_eliminacao }}
-                                {% endif %}
-                            </small>
-                        </td>
-                    </tr>
-                    {% endif %}
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="row">
+            <div class="col-md-2">
+                <div class="stat-card">
+                    <div class="stat-number">{{ ciclo.indicadores|length }}</div>
+                    <div class="stat-label">Indicadores</div>
+                </div>
+            </div>
+            {% if ciclo.estado == 'revisto' %}
+            <div class="col-md-2">
+                <div class="stat-card success">
+                    <div class="stat-number">{{ ciclo.indicadores|selectattr('confirmado')|list|length }}</div>
+                    <div class="stat-label">Confirmados</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="stat-card warning">
+                    <div class="stat-number">{{ ciclo.indicadores|selectattr('foi_editado_pelo_director')|list|length }}</div>
+                    <div class="stat-label">Editados</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="stat-card danger">
+                    <div class="stat-number">{{ ciclo.indicadores|selectattr('propor_eliminacao')|list|length }}</div>
+                    <div class="stat-label">Para Eliminar</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div style="background: #f5f5f5; padding: 1rem; border-radius: 8px;">
+                    <small style="color: #666;">
+                        <strong>Director:</strong> {{ ciclo.nome_director }}<br>
+                        <strong>Data Revisão:</strong> {{ ciclo.data_revisao.strftime('%d/%m/%Y %H:%M') }}
+                    </small>
+                </div>
+            </div>
+            {% endif %}
         </div>
+    </div>
+</div>
+
+{% for grupo_id, indicadores in indicadores_por_grupo.items() %}
+<div class="card mb-4">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <strong>{{ grupo_id }}</strong>
+            <span class="badge badge-primary">{{ indicadores|length }} indicadores</span>
+        </div>
+    </div>
+    <div class="card-body">
+        {% for ind in indicadores %}
+        <div class="card-indicador {% if ind.propor_eliminacao %}eliminacao{% elif ind.confirmado %}confirmado{% elif ind.foi_editado_pelo_director %}editado{% endif %}">
+            <div class="card-indicador-header">
+                <div class="card-indicador-titulo">
+                    <span class="card-indicador-codigo">{{ ind.codigo }}</span>
+                    <div>
+                        <strong>{{ ind.nome_original }}</strong>
+                        {% if ind.foi_editado_pelo_director %}
+                        <br><small style="color: var(--warning);">✎ Nome editado</small>
+                        {% endif %}
+                        <br><small style="color: #666;">{{ ind.definicao[:70] }}</small>
+                    </div>
+                </div>
+                <div>
+                    {% if ind.propor_eliminacao %}
+                        <span class="badge badge-danger">⚠ Eliminação</span>
+                    {% elif ind.confirmado %}
+                        <span class="badge badge-success">✓ Confirmado</span>
+                    {% elif ind.foi_editado_pelo_director %}
+                        <span class="badge badge-warning">✎ Editado</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-indicador-body">
+                <div class="row mb-3">
+                    <div class="col-md-2">
+                        <small style="color: #666;">
+                            <strong>Meta</strong><br>
+                            {{ ind.meta_original }}
+                            {% if ind.meta_editada %}
+                            <br><em style="color: var(--warning);">→ {{ ind.meta_editada }}</em>
+                            {% endif %}
+                        </small>
+                    </div>
+                    <div class="col-md-2">
+                        <small style="color: #666;">
+                            <strong>Resultado</strong><br>
+                            {{ ind.resultado_actual or '—' }}
+                        </small>
+                    </div>
+                    <div class="col-md-4">
+                        <small style="color: #666;">
+                            <strong>Projectos</strong><br>
+                            {% if ind.projectos %}
+                                {% for proj in ind.projectos.split(',') %}
+                                <span class="badge badge-primary" style="margin-right: 0.25rem;">{{ proj.strip() }}</span>
+                                {% endfor %}
+                            {% else %}
+                            <em>—</em>
+                            {% endif %}
+                        </small>
+                    </div>
+                    <div class="col-md-4">
+                        <small style="color: #666;">
+                            <strong>Tipo</strong><br>
+                            {{ 'Monitoria' if ind.tipo == 'M' else 'Avaliação' }}
+                        </small>
+                    </div>
+                </div>
+
+                {% if ind.notas_equipa or ind.notas_director or ind.propor_eliminacao %}
+                <div style="border-top: 1px solid #e0e0e0; padding-top: 1rem; margin-top: 1rem;">
+                    {% if ind.notas_equipa %}
+                    <small style="color: #333;"><strong>📝 Notas Equipa:</strong> {{ ind.notas_equipa }}</small><br>
+                    {% endif %}
+                    {% if ind.notas_director %}
+                    <small style="color: #333;"><strong>💬 Notas Director:</strong> {{ ind.notas_director }}</small><br>
+                    {% endif %}
+                    {% if ind.propor_eliminacao %}
+                    <small style="color: var(--danger);"><strong>❌ Justificação Eliminação:</strong> {{ ind.justificacao_eliminacao }}</small>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
     </div>
 </div>
 {% endfor %}

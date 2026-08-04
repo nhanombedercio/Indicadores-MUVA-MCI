@@ -1,104 +1,175 @@
 {% extends "base.html" %}
 
-{% block title %}Ciclos de Revisão - MCI Indicadores{% endblock %}
+{% block title %}Painel - MCI Indicadores{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
+<div class="row mb-5">
     <div class="col-md-8">
-        <h1>Ciclos de Revisão</h1>
+        <h1>📊 Painel de Controle</h1>
+        <p class="text-muted">Gerencie ciclos de revisão de indicadores MUVA/MCI</p>
     </div>
     <div class="col-md-4 text-end">
-        <a href="{{ url_for('gestao.ciclo_novo') }}" class="btn btn-success">+ Novo Ciclo</a>
-        <a href="{{ url_for('gestao.exportar_todos') }}" class="btn btn-info">📊 Exportar Todos</a>
+        <a href="{{ url_for('gestao.ciclo_novo') }}" class="btn btn-primary btn-lg">
+            ➕ Novo Ciclo
+        </a>
+        <a href="{{ url_for('gestao.dashboard') }}" class="btn btn-secondary btn-lg ms-2">
+            📈 Dashboard
+        </a>
     </div>
 </div>
 
-<div class="btn-group mb-3" role="group">
-    <a href="{{ url_for('gestao.index', estado='todos') }}" class="btn btn-outline-primary {% if estado == 'todos' %}active{% endif %}">Todos</a>
-    <a href="{{ url_for('gestao.index', estado='pendente') }}" class="btn btn-outline-primary {% if estado == 'pendente' %}active{% endif %}">Pendentes</a>
-    <a href="{{ url_for('gestao.index', estado='revisto') }}" class="btn btn-outline-primary {% if estado == 'revisto' %}active{% endif %}">Revistos</a>
+<div class="card mb-4">
+    <div class="card-header">
+        🔍 Filtrar Ciclos
+    </div>
+    <div class="card-body">
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('gestao.index', estado='todos') }}" class="btn btn-outline-primary {% if estado == 'todos' %}active{% endif %}">
+                Todos ({{ ciclos.total }})
+            </a>
+            <a href="{{ url_for('gestao.index', estado='pendente') }}" class="btn btn-outline-primary {% if estado == 'pendente' %}active{% endif %}">
+                ⏳ Pendentes
+            </a>
+            <a href="{{ url_for('gestao.index', estado='revisto') }}" class="btn btn-outline-primary {% if estado == 'revisto' %}active{% endif %}">
+                ✓ Revistos
+            </a>
+        </div>
+    </div>
 </div>
 
-<div class="table-responsive">
-    <table class="table table-hover">
-        <thead class="table-dark">
-            <tr>
-                <th>Título</th>
-                <th>Estado</th>
-                <th>Director</th>
-                <th>Data Criação</th>
-                <th>Acções</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% if ciclos.items %}
-                {% for ciclo in ciclos.items %}
-                    <tr>
-                        <td><strong>{{ ciclo.titulo }}</strong></td>
-                        <td>
-                            {% if ciclo.estado == 'revisto' %}
-                                <span class="badge bg-success">Revisto</span>
-                            {% else %}
-                                <span class="badge bg-warning text-dark">Pendente</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ ciclo.nome_director or '—' }}</td>
-                        <td>{{ ciclo.criado_em.strftime('%d/%m/%Y %H:%M') }}</td>
-                        <td>
-                            <a href="{{ url_for('gestao.ciclo_detalhe', id=ciclo.id) }}" class="btn btn-sm btn-primary">Ver</a>
-                            {% if ciclo.estado == 'pendente' %}
-                                <a href="{{ url_for('gestao.ciclo_link', id=ciclo.id) }}" class="btn btn-sm btn-info">Link</a>
-                                <a href="{{ url_for('gestao.ciclo_editar', id=ciclo.id) }}" class="btn btn-sm btn-warning">Editar</a>
-                            {% endif %}
-                            <a href="{{ url_for('gestao.ciclo_exportar', id=ciclo.id) }}" class="btn btn-sm btn-success">Excel</a>
-                            <form action="{{ url_for('gestao.ciclo_apagar', id=ciclo.id) }}" method="POST" style="display:inline;">
-                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tem a certeza?')">Apagar</button>
-                            </form>
-                        </td>
-                    </tr>
-                {% endfor %}
-            {% else %}
-                <tr>
-                    <td colspan="5" class="text-center text-muted">Nenhum ciclo encontrado</td>
-                </tr>
-            {% endif %}
-        </tbody>
-    </table>
+{% if ciclos.items %}
+<div class="row">
+    {% for ciclo in ciclos.items %}
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="mb-1">{{ ciclo.titulo }}</h5>
+                        <small style="color: rgba(255,255,255,0.8);">
+                            Criado em {{ ciclo.criado_em.strftime('%d/%m/%Y às %H:%M') }}
+                        </small>
+                    </div>
+                    <span class="badge {% if ciclo.estado == 'revisto' %}badge-success{% else %}badge-warning{% endif %}">
+                        {% if ciclo.estado == 'revisto' %}✓ Revisto{% else %}⏳ Pendente{% endif %}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if ciclo.estado == 'revisto' %}
+                <div class="mb-3">
+                    <small style="color: #666;">
+                        <strong>Director:</strong> {{ ciclo.nome_director }}<br>
+                        <strong>Data Revisão:</strong> {{ ciclo.data_revisao.strftime('%d/%m/%Y às %H:%M') }}
+                    </small>
+                </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div style="background: #f5f5f5; padding: 0.75rem; border-radius: 6px; text-align: center;">
+                            <div style="font-size: 1.3rem; font-weight: 700; color: var(--muva-primary);">
+                                {{ ciclo.indicadores|length }}
+                            </div>
+                            <small style="color: #666;">Indicadores</small>
+                        </div>
+                        {% if ciclo.estado == 'revisto' %}
+                        <div style="background: #f5f5f5; padding: 0.75rem; border-radius: 6px; text-align: center;">
+                            <div style="font-size: 1.3rem; font-weight: 700; color: var(--success);">
+                                {{ ciclo.indicadores|selectattr('confirmado')|list|length }}
+                            </div>
+                            <small style="color: #666;">Confirmados</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if ciclo.observacoes_director %}
+                <div style="background: #f9f9f9; padding: 0.75rem; border-left: 3px solid var(--muva-secondary); border-radius: 4px; margin-bottom: 1rem;">
+                    <small style="color: #333;">
+                        <strong>Observações:</strong> {{ ciclo.observacoes_director[:100] }}{% if ciclo.observacoes_director|length > 100 %}...{% endif %}
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-body pt-0 border-top">
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <a href="{{ url_for('gestao.ciclo_detalhe', id=ciclo.id) }}" class="btn btn-sm btn-primary">
+                        👁️ Ver
+                    </a>
+                    {% if ciclo.estado == 'pendente' %}
+                    <a href="{{ url_for('gestao.ciclo_link', id=ciclo.id) }}" class="btn btn-sm btn-info">
+                        🔗 Link
+                    </a>
+                    <a href="{{ url_for('gestao.ciclo_editar', id=ciclo.id) }}" class="btn btn-sm btn-warning">
+                        ✎ Editar
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('gestao.ciclo_exportar', id=ciclo.id) }}" class="btn btn-sm btn-success">
+                        📊 Excel
+                    </a>
+                    <form action="{{ url_for('gestao.ciclo_apagar', id=ciclo.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tem a certeza que quer apagar este ciclo?')">
+                            🗑️ Apagar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
 </div>
 
 {% if ciclos.pages > 1 %}
 <nav aria-label="Paginação">
     <ul class="pagination justify-content-center">
         {% if ciclos.has_prev %}
-            <li class="page-item">
-                <a class="page-link" href="{{ url_for('gestao.index', page=ciclos.prev_num, estado=estado) }}">Anterior</a>
-            </li>
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('gestao.index', page=ciclos.prev_num, estado=estado) }}">
+                ← Anterior
+            </a>
+        </li>
         {% endif %}
 
         {% for page_num in ciclos.iter_pages() %}
             {% if page_num %}
                 {% if page_num == ciclos.page %}
-                    <li class="page-item active">
-                        <span class="page-link">{{ page_num }}</span>
-                    </li>
+                <li class="page-item active">
+                    <span class="page-link">{{ page_num }}</span>
+                </li>
                 {% else %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('gestao.index', page=page_num, estado=estado) }}">{{ page_num }}</a>
-                    </li>
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('gestao.index', page=page_num, estado=estado) }}">{{ page_num }}</a>
+                </li>
                 {% endif %}
             {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link">...</span>
-                </li>
+            <li class="page-item disabled">
+                <span class="page-link">…</span>
+            </li>
             {% endif %}
         {% endfor %}
 
         {% if ciclos.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="{{ url_for('gestao.index', page=ciclos.next_num, estado=estado) }}">Próxima</a>
-            </li>
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('gestao.index', page=ciclos.next_num, estado=estado) }}">
+                Próxima →
+            </a>
+        </li>
         {% endif %}
     </ul>
 </nav>
+{% endif %}
+
+{% else %}
+<div class="card" style="text-align: center; padding: 3rem 1rem;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
+    <h4 style="color: #666;">Nenhum ciclo encontrado</h4>
+    <p style="color: #999; margin-bottom: 1.5rem;">
+        Crie o primeiro ciclo de revisão para começar
+    </p>
+    <a href="{{ url_for('gestao.ciclo_novo') }}" class="btn btn-primary btn-lg">
+        ➕ Criar Novo Ciclo
+    </a>
+</div>
 {% endif %}
 {% endblock %}

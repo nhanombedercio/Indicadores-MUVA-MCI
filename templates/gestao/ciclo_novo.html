@@ -5,63 +5,98 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-12">
-        <h1>Criar Novo Ciclo de Revisão</h1>
-        <a href="{{ url_for('gestao.index') }}" class="btn btn-secondary">← Voltar</a>
+        <h1>🎯 Criar Novo Ciclo de Revisão</h1>
+        <p class="text-muted">Preencha os dados de cada indicador. Todos os campos podem ser editados depois.</p>
     </div>
 </div>
 
-<form method="POST" class="needs-validation">
-    <div class="row">
-        <div class="col-md-6">
-            <div class="mb-3">
-                <label for="titulo" class="form-label">Título do Ciclo</label>
-                <input type="text" class="form-control" id="titulo" name="titulo" required placeholder="ex: Revisão MCI — Agosto 2026">
+<form method="POST" class="needs-validation" id="formCiclo" novalidate>
+    <div class="card mb-4">
+        <div class="card-header">
+            📋 Informação do Ciclo
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="titulo" class="form-label">Título do Ciclo</label>
+                        <input type="text" class="form-control" id="titulo" name="titulo" required
+                               placeholder="ex: Revisão MCI — Agosto 2026">
+                        <small class="text-muted">Este título aparecerá em todos os relatórios e exportações</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Total de Indicadores</label>
+                        <div class="form-control-plaintext">
+                            <strong id="totalIndicadores" style="font-size: 1.2rem; color: var(--muva-primary);">0</strong>
+                            <small class="text-muted d-block">serão criados neste ciclo</small>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <h4 class="mt-4 mb-3">Indicadores por Grupo</h4>
-
     {% for grupo in grupos %}
-    <div class="card mb-3">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">{{ grupo.grupo_id }} — {{ grupo.grupo_label }}</h5>
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ grupo.grupo_id }}</strong><br>
+                    <small>{{ grupo.grupo_label }}</small>
+                </div>
+                <span class="badge badge-primary">{{ grupo.indicadores|length }} indicadores</span>
+            </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-sm">
+                <table class="table table-hover">
                     <thead>
-                        <tr>
-                            <th>Código</th>
-                            <th>Tipo</th>
-                            <th>Nome</th>
-                            <th>Meta</th>
-                            <th>Resultado Actual</th>
-                            <th>Projectos</th>
-                            <th>Notas</th>
+                        <tr style="background: #f5f5f5;">
+                            <th style="width: 80px;">Código</th>
+                            <th style="width: 50px;">Tipo</th>
+                            <th>Nome do Indicador</th>
+                            <th style="width: 150px;">Meta</th>
+                            <th style="width: 180px;">Resultado Actual</th>
+                            <th style="width: 180px;">Projectos</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for ind in grupo.indicadores %}
                         <tr>
-                            <td><small>{{ ind.codigo }}</small></td>
-                            <td><small>{{ 'Monitoria' if ind.tipo == 'M' else 'Avaliação' }}</small></td>
-                            <td><small>{{ ind.nome }}</small></td>
-                            <td><small>{{ ind.meta }}</small></td>
+                            <td>
+                                <small class="badge badge-primary">{{ ind.codigo }}</small>
+                            </td>
+                            <td>
+                                <small class="badge {% if ind.tipo == 'M' %}badge-info{% else %}badge-warning{% endif %}">
+                                    {{ 'M' if ind.tipo == 'M' else 'A' }}
+                                </small>
+                            </td>
+                            <td>
+                                <small>
+                                    <strong title="{{ ind.nome }}">{{ ind.nome[:60] }}{% if ind.nome|length > 60 %}...{% endif %}</strong><br>
+                                    <em style="color: #999; font-size: 0.85rem;">{{ ind.definicao[:80] }}{% if ind.definicao|length > 80 %}...{% endif %}</em>
+                                </small>
+                            </td>
+                            <td>
+                                <input type="text" class="form-control form-control-sm"
+                                       name="meta_{{ ind.codigo }}"
+                                       value="{{ ind.meta }}"
+                                       readonly style="background: #f5f5f5; cursor: not-allowed;">
+                            </td>
                             <td>
                                 <input type="text" class="form-control form-control-sm"
                                        name="resultado_actual_{{ ind.codigo }}"
-                                       placeholder="—">
+                                       placeholder="ex: 5, 80%, 100 pessoas">
                             </td>
                             <td>
-                                <input type="text" class="form-control form-control-sm"
-                                       name="projectos_{{ ind.codigo }}"
-                                       placeholder="—">
-                            </td>
-                            <td>
-                                <input type="text" class="form-control form-control-sm"
-                                       name="notas_equipa_{{ ind.codigo }}"
-                                       placeholder="—">
+                                <div class="projects-input" id="projects_{{ ind.codigo }}">
+                                    <input type="hidden" name="projectos_json_{{ ind.codigo }}" value="[]">
+                                    <div class="projects-container mb-2"></div>
+                                    <button type="button" class="btn btn-sm btn-secondary"
+                                            onclick="toggleProjectInput(this)">+ Adicionar</button>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -72,9 +107,113 @@
     </div>
     {% endfor %}
 
-    <div class="mt-4">
-        <button type="submit" class="btn btn-primary btn-lg">Criar Ciclo</button>
-        <a href="{{ url_for('gestao.index') }}" class="btn btn-secondary btn-lg">Cancelar</a>
+    <div class="row">
+        <div class="col-md-12">
+            <button type="submit" class="btn btn-primary btn-lg">
+                ✓ Criar Ciclo
+            </button>
+            <a href="{{ url_for('gestao.index') }}" class="btn btn-secondary btn-lg">
+                ← Cancelar
+            </a>
+        </div>
     </div>
 </form>
+
+<script>
+// Contar indicadores
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = document.querySelectorAll('input[name^="resultado_actual_"]');
+    document.getElementById('totalIndicadores').textContent = inputs.length;
+
+    // Inicializar projects containers
+    document.querySelectorAll('.projects-input').forEach(container => {
+        container.addEventListener('project-changed', function() {
+            updateProjectsJson(this);
+        });
+    });
+});
+
+function toggleProjectInput(btn) {
+    const container = btn.parentElement;
+    const existingInput = container.querySelector('.project-input-group');
+
+    if (existingInput) {
+        existingInput.remove();
+    } else {
+        const div = document.createElement('div');
+        div.className = 'project-input-group';
+        div.innerHTML = `
+            <input type="text" placeholder="Nome do projecto" class="project-input">
+            <button type="button" class="btn btn-sm btn-success" onclick="addProject(this)">Adicionar</button>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="this.parentElement.remove()">Cancelar</button>
+        `;
+        container.insertBefore(div, btn);
+        container.querySelector('.project-input').focus();
+    }
+}
+
+function addProject(btn) {
+    const input = btn.parentElement.querySelector('.project-input');
+    const project = input.value.trim();
+
+    if (!project) {
+        alert('Digite o nome do projecto');
+        return;
+    }
+
+    const container = btn.closest('.projects-input');
+    const projectsContainer = container.querySelector('.projects-container');
+
+    const tag = document.createElement('div');
+    tag.className = 'project-tag';
+    tag.innerHTML = `
+        ${escapeHtml(project)}
+        <button type="button" class="remove-btn" onclick="this.parentElement.remove(); updateProjectsJson(this.closest('.projects-input'))">×</button>
+    `;
+
+    projectsContainer.appendChild(tag);
+    input.parentElement.remove();
+    container.dispatchEvent(new Event('project-changed'));
+}
+
+function updateProjectsJson(container) {
+    const projects = Array.from(container.querySelectorAll('.project-tag'))
+        .map(tag => tag.textContent.replace('×', '').trim());
+    const input = container.querySelector('input[name$="_json"]');
+    if (input) {
+        input.value = JSON.stringify(projects);
+    }
+}
+
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+// Processar projects JSON antes de submeter
+document.getElementById('formCiclo').addEventListener('submit', function(e) {
+    document.querySelectorAll('.projects-input').forEach(container => {
+        const projects = Array.from(container.querySelectorAll('.project-tag'))
+            .map(tag => tag.textContent.replace('×', '').trim());
+        const hiddenInput = container.querySelector('input[name$="_json"]');
+        if (hiddenInput) {
+            hiddenInput.value = JSON.stringify(projects);
+        }
+    });
+});
+</script>
+
+<style>
+    .projects-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+</style>
 {% endblock %}

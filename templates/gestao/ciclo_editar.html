@@ -4,45 +4,88 @@
 
 {% block content %}
 <div class="row mb-4">
-    <div class="col-md-12">
-        <h1>Editar Ciclo: {{ ciclo.titulo }}</h1>
-        <a href="{{ url_for('gestao.ciclo_detalhe', id=ciclo.id) }}" class="btn btn-secondary">← Voltar</a>
+    <div class="col-md-8">
+        <h1>✎ Editar Ciclo: {{ ciclo.titulo }}</h1>
+        <p class="text-muted">Clique nos campos para editar. As metas são fixas.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('gestao.ciclo_detalhe', id=ciclo.id) }}" class="btn btn-secondary">
+            ← Voltar
+        </a>
     </div>
 </div>
 
-<form method="POST" class="needs-validation">
-    <h4 class="mt-4 mb-3">Dados dos Indicadores</h4>
-
+<form method="POST" class="needs-validation" id="formEditar" novalidate>
     {% for grupo_id, indicadores in indicadores_por_grupo.items() %}
-    <div class="card mb-3">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">{{ grupo_id }}</h5>
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>{{ grupo_id }}</strong>
         </div>
         <div class="card-body">
             {% for ind in indicadores %}
-            <div class="row mb-4 pb-3 border-bottom">
-                <div class="col-md-12">
-                    <h6>{{ ind.codigo }} — {{ ind.nome_original }}</h6>
-                    <small class="text-muted d-block mb-2">{{ ind.definicao }}</small>
-                    <small class="text-muted d-block mb-3">Meta: <strong>{{ ind.meta_original }}</strong></small>
+            <div class="card-indicador mb-3">
+                <div class="card-indicador-header">
+                    <div class="card-indicador-titulo">
+                        <span class="card-indicador-codigo">{{ ind.codigo }}</span>
+                        <div>
+                            <strong title="{{ ind.nome_original }}">{{ ind.nome_original[:60] }}</strong><br>
+                            <small style="color: #666;">{{ ind.definicao[:80] }}</small>
+                        </div>
+                    </div>
                 </div>
+                <div class="card-indicador-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">
+                                <small>Meta</small>
+                            </label>
+                            <input type="text" class="form-control" value="{{ ind.meta_original }}"
+                                   readonly style="background: #f5f5f5; cursor: not-allowed;">
+                            <small class="text-muted">Não editável</small>
+                        </div>
 
-                <div class="col-md-6">
-                    <label class="form-label">Resultado Actual</label>
-                    <input type="text" class="form-control" name="resultado_actual_{{ ind.id }}"
-                           value="{{ ind.resultado_actual or '' }}" placeholder="—">
-                </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">
+                                <small>📊 Resultado Actual</small>
+                            </label>
+                            <input type="text" class="form-control" name="resultado_actual_{{ ind.id }}"
+                                   value="{{ ind.resultado_actual or '' }}"
+                                   placeholder="ex: 5, 80%, 150 pessoas">
+                        </div>
 
-                <div class="col-md-6">
-                    <label class="form-label">Projectos</label>
-                    <input type="text" class="form-control" name="projectos_{{ ind.id }}"
-                           value="{{ ind.projectos or '' }}" placeholder="Separar por vírgulas">
-                </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <small>🎯 Projectos Associados</small>
+                            </label>
+                            <div class="projects-editor" id="projects_{{ ind.id }}">
+                                <input type="hidden" name="projectos_json_{{ ind.id }}" value="{{ ind.projectos|tojson if ind.projectos else '[]' }}">
+                                <div class="projects-container mb-2">
+                                    {% if ind.projectos %}
+                                        {% set projects = ind.projectos.split(',') if ind.projectos else [] %}
+                                        {% for proj in projects %}
+                                        <div class="project-tag">
+                                            {{ proj.strip() }}
+                                            <button type="button" class="remove-btn" onclick="removeProject(this)">×</button>
+                                        </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <button type="button" class="btn btn-sm btn-secondary" onclick="toggleProjectInput(this)">
+                                    + Adicionar Projecto
+                                </button>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="col-md-12">
-                    <label class="form-label">Notas da Equipa</label>
-                    <textarea class="form-control" name="notas_equipa_{{ ind.id }}" rows="2"
-                              placeholder="Observações">{{ ind.notas_equipa or '' }}</textarea>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">
+                                <small>📝 Notas da Equipa</small>
+                            </label>
+                            <textarea class="form-control" name="notas_equipa_{{ ind.id }}" rows="2"
+                                      placeholder="Observações sobre este indicador">{{ ind.notas_equipa or '' }}</textarea>
+                        </div>
+                    </div>
                 </div>
             </div>
             {% endfor %}
@@ -50,9 +93,97 @@
     </div>
     {% endfor %}
 
-    <div class="mt-4">
-        <button type="submit" class="btn btn-primary btn-lg">Guardar Alterações</button>
-        <a href="{{ url_for('gestao.ciclo_detalhe', id=ciclo.id) }}" class="btn btn-secondary btn-lg">Cancelar</a>
+    <div class="row">
+        <div class="col-md-12">
+            <button type="submit" class="btn btn-primary btn-lg">
+                ✓ Guardar Alterações
+            </button>
+            <a href="{{ url_for('gestao.ciclo_detalhe', id=ciclo.id) }}" class="btn btn-secondary btn-lg">
+                ← Cancelar
+            </a>
+        </div>
     </div>
 </form>
+
+<script>
+function toggleProjectInput(btn) {
+    const container = btn.parentElement;
+    const existingInput = container.querySelector('.project-input-group');
+
+    if (existingInput) {
+        existingInput.remove();
+    } else {
+        const div = document.createElement('div');
+        div.className = 'project-input-group';
+        div.innerHTML = `
+            <input type="text" placeholder="Nome do projecto" class="project-input">
+            <button type="button" class="btn btn-sm btn-success" onclick="addProject(this)">Adicionar</button>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="this.parentElement.remove()">Cancelar</button>
+        `;
+        container.insertBefore(div, btn);
+        container.querySelector('.project-input').focus();
+    }
+}
+
+function addProject(btn) {
+    const input = btn.parentElement.querySelector('.project-input');
+    const project = input.value.trim();
+
+    if (!project) {
+        alert('Digite o nome do projecto');
+        return;
+    }
+
+    const container = btn.closest('.projects-editor');
+    const projectsContainer = container.querySelector('.projects-container');
+
+    const tag = document.createElement('div');
+    tag.className = 'project-tag';
+    tag.innerHTML = `
+        ${escapeHtml(project)}
+        <button type="button" class="remove-btn" onclick="removeProject(this)">×</button>
+    `;
+
+    projectsContainer.appendChild(tag);
+    input.parentElement.remove();
+    updateProjectsJson(container);
+}
+
+function removeProject(btn) {
+    btn.closest('.project-tag').remove();
+    updateProjectsJson(btn.closest('.projects-editor'));
+}
+
+function updateProjectsJson(container) {
+    const projects = Array.from(container.querySelectorAll('.project-tag'))
+        .map(tag => tag.textContent.replace('×', '').trim());
+    const input = container.querySelector('input[name$="_json"]');
+    if (input) {
+        input.value = JSON.stringify(projects);
+    }
+}
+
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+// Processar projects JSON antes de submeter
+document.getElementById('formEditar').addEventListener('submit', function(e) {
+    document.querySelectorAll('.projects-editor').forEach(container => {
+        const projects = Array.from(container.querySelectorAll('.project-tag'))
+            .map(tag => tag.textContent.replace('×', '').trim());
+        const hiddenInput = container.querySelector('input[name$="_json"]');
+        if (hiddenInput) {
+            hiddenInput.value = JSON.stringify(projects);
+        }
+    });
+});
+</script>
 {% endblock %}
