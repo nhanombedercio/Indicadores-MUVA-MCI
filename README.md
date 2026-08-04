@@ -30,25 +30,213 @@ mci_indicadores/
 └── README.md
 ```
 
-## Início Rápido
+## Desenvolvimento Local
 
 ### 1. Instalar dependências
 
 ```bash
+python -m venv venv
+source venv/bin/activate  # No Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
 ### 2. Configurar variáveis de ambiente
 
-Edite `.env` com a sua configuração (SECRET_KEY, GESTAO_PASSWORD, DATABASE_URL).
+Crie um ficheiro `.env` (copie `.env` existente):
 
-### 3. Executar a aplicação
+```env
+FLASK_DEBUG=true
+SECRET_KEY=chave-secreta-para-desenvolvimento
+GESTAO_PASSWORD=muva2026
+DATABASE_URL=sqlite:///mci_indicadores.db
+```
+
+### 3. Inicializar base de dados
+
+```bash
+python init_db.py
+```
+
+### 4. Executar em desenvolvimento
 
 ```bash
 python app.py
 ```
 
 A aplicação estará disponível em `http://localhost:5000`.
+
+## Produção — Digital Ocean
+
+### Pré-requisitos
+
+- Droplet Digital Ocean Ubuntu 24.04 LTS (1GB RAM suficiente)
+- Acesso SSH ao servidor
+- Domínio apontado para o servidor
+
+### 1. Setup Inicial do Servidor
+
+```bash
+# Como root
+ssh root@IP_DO_SERVIDOR
+
+apt update && apt upgrade -y
+apt install -y python3-pip python3-venv nginx certbot python3-certbot-nginx git ufw
+
+# Criar utilizador de aplicação
+adduser muva
+usermod -aG sudo muva
+rsync --archive --chown=muva:muva ~/.ssh /home/muva
+
+# Firewall
+ufw allow OpenSSH
+ufw allow 'Nginx Full'
+ufw enable
+```
+
+### 2. Clonar e Instalar
+
+```bash
+# Como utilizador muva
+su - muva
+
+mkdir -p /var/www/mci_indicadores
+cd /var/www/mci_indicadores
+
+# Clonar repositório
+git clone https://github.com/seu-user/Indicadores-MUVA-MCI.git .
+
+# Ambiente virtual
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 3. Configurar Variáveis de Produção
+
+```bash
+# Gerar SECRET_KEY segura
+python -c "import secrets; print(secrets.token_hex(32))"
+
+# Copiar exemplo e editar
+cp .env.production.example .env
+
+# Editar .env com valores reais
+nano .env
+```
+
+Conteúdo recomendado para `.env`:
+
+```env
+SECRET_KEY=<SAÍDA_DO_COMANDO_ACIMA>
+GESTAO_PASSWORD=USAR-PASSWORD-FORTE
+DATABASE_URL=sqlite:////var/www/mci_indicadores/instance/mci_indicadores.db
+FLASK_DEBUG=false
+```
+
+### 4. Criar Base de Dados
+
+```bash
+mkdir -p /var/www/mci_indicadores/instance
+source venv/bin/activate
+python init_db.py
+```
+
+### 5. Configurar Gunicorn como Serviço
+
+```bash
+# Como root
+sudo nano /etc/systemd/system/mci_indicadores.service
+```
+
+Conteúdo:
+
+```ini
+[Unit]
+Description=Gunicorn — MCI Indicadores MUVA
+After=network.target
+
+[Service]
+User=muva
+Group=www-data
+WorkingDirectory=/var/www/mci_indicadores
+Environment="PATH=/var/www/mci_indicadores/venv/bin"
+EnvironmentFile=/var/www/mci_indicadores/.env
+ExecStart=/var/www/mci_indicadores/venv/bin/gunicorn \
+    --workers 2 \
+    --bind unix:/run/mci_indicadores.sock \
+    --access-logfile /var/log/mci_indicadores_access.log \
+    --error-logfile /var/log/mci_indicadores_error.log \
+    wsgi:app
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable mci_indicadores
+sudo systemctl start mci_indicadores
+sudo systemctl status mci_indicadores
+```
+
+### 6. Configurar Nginx
+
+```bash
+sudo nano /etc/nginx/sites-available/mci_indicadores
+```
+
+Conteúdo:
+
+```nginx
+server {
+    listen 80;
+    server_name mci.seu-dominio.mz;
+
+    location /static/ {
+        alias /var/www/mci_indicadores/static/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/run/mci_indicadores.sock;
+        proxy_read_timeout 120s;
+        client_max_body_size 5M;
+    }
+}
+```
+
+```bash
+sudo ln -s /etc/nginx/sites-available/mci_indicadores /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### 7. HTTPS com Let's Encrypt
+
+```bash
+sudo certbot --nginx -d mci.seu-dominio.mz
+sudo certbot renew --dry-run
+```
+
+### Manutenção
+
+```bash
+# Ver logs
+sudo journalctl -u mci_indicadores -f
+
+# Reiniciar após atualizar código
+cd /var/www/mci_indicadores
+git pull
+sudo systemctl restart mci_indicadores
+
+# Backup da base de dados
+cp /var/www/mci_indicadores/instance/mci_indicadores.db \
+   /home/muva/backups/mci_$(date +%Y%m%d).db
+```
 
 ## Acesso
 
