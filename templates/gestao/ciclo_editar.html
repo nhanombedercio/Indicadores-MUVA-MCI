@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Ciclo: {{ ciclo.titulo }} - MCI Indicadores{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h1>Editar Ciclo: {{ ciclo.titulo }}</h1>
+        <a href="{{ url_for('gestao.ciclo_detalhe', id=ciclo.id) }}" class="btn btn-secondary">← Voltar</a>
+    </div>
+</div>
+
+<form method="POST" class="needs-validation">
+    <h4 class="mt-4 mb-3">Dados dos Indicadores</h4>
+
+    {% for grupo_id, indicadores in indicadores_por_grupo.items() %}
+    <div class="card mb-3">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">{{ grupo_id }}</h5>
+        </div>
+        <div class="card-body">
+            {% for ind in indicadores %}
+            <div class="row mb-4 pb-3 border-bottom">
+                <div class="col-md-12">
+                    <h6>{{ ind.codigo }} — {{ ind.nome_original }}</h6>
+                    <small class="text-muted d-block mb-2">{{ ind.definicao }}</small>
+                    <small class="text-muted d-block mb-3">Meta: <strong>{{ ind.meta_original }}</strong></small>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Resultado Actual</label>
+                    <input type="text" class="form-control" name="resultado_actual_{{ ind.id }}"
+                           value="{{ ind.resultado_actual or '' }}" placeholder="—">
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Projectos</label>
+                    <input type="text" class="form-control" name="projectos_{{ ind.id }}"
+                           value="{{ ind.projectos or '' }}" placeholder="Separar por vírgulas">
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Notas da Equipa</label>
+                    <textarea class="form-control" name="notas_equipa_{{ ind.id }}" rows="2"
+                              placeholder="Observações">{{ ind.notas_equipa or '' }}</textarea>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary btn-lg">Guardar Alterações</button>
+        <a href="{{ url_for('gestao.ciclo_detalhe', id=ciclo.id) }}" class="btn btn-secondary btn-lg">Cancelar</a>
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Ciclo: {{ ciclo.titulo }} - MCI Indicadores{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>{{ ciclo.titulo }}</h1>
+        <small class="text-muted">
+            Criado em {{ ciclo.criado_em.strftime('%d/%m/%Y %H:%M') }}
+            | Estado:
+            {% if ciclo.estado == 'revisto' %}
+                <span class="badge bg-success">Revisto</span>
+                {% if ciclo.nome_director %} por {{ ciclo.nome_director }}{% endif %}
+                em {{ ciclo.data_revisao.strftime('%d/%m/%Y %H:%M') }}
+            {% else %}
+                <span class="badge bg-warning text-dark">Pendente</span>
+            {% endif %}
+        </small>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('gestao.index') }}" class="btn btn-secondary">← Voltar</a>
+        {% if ciclo.estado == 'pendente' %}
+            <a href="{{ url_for('gestao.ciclo_link', id=ciclo.id) }}" class="btn btn-info">Link</a>
+            <a href="{{ url_for('gestao.ciclo_editar', id=ciclo.id) }}" class="btn btn-warning">Editar</a>
+        {% endif %}
+        <a href="{{ url_for('gestao.ciclo_exportar', id=ciclo.id) }}" class="btn btn-success">Excel</a>
+    </div>
+</div>
+
+{% if ciclo.estado == 'revisto' and ciclo.observacoes_director %}
+<div class="alert alert-info">
+    <strong>Observações do Director:</strong> {{ ciclo.observacoes_director }}
+</div>
+{% endif %}
+
+{% for grupo_id, indicadores in indicadores_por_grupo.items() %}
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">{{ grupo_id }}</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Tipo</th>
+                        <th>Nome</th>
+                        <th>Meta</th>
+                        <th>Resultado</th>
+                        <th>Projectos</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ind in indicadores %}
+                    <tr>
+                        <td><small><strong>{{ ind.codigo }}</strong></small></td>
+                        <td><small>{{ 'M' if ind.tipo == 'M' else 'A' }}</small></td>
+                        <td>
+                            <small>
+                                {{ ind.nome_original }}
+                                {% if ind.foi_editado_pelo_director %}
+                                <br><em class="text-warning">✎ Editado: {{ ind.nome_editado }}</em>
+                                {% endif %}
+                            </small>
+                        </td>
+                        <td>
+                            <small>
+                                {{ ind.meta_original }}
+                                {% if ind.meta_editada %}
+                                <br><em class="text-warning">✎ {{ ind.meta_editada }}</em>
+                                {% endif %}
+                            </small>
+                        </td>
+                        <td><small>{{ ind.resultado_actual or '—' }}</small></td>
+                        <td><small>{{ ind.projectos or '—' }}</small></td>
+                        <td>
+                            {% if ind.propor_eliminacao %}
+                                <span class="badge bg-danger">⚠ Eliminação</span>
+                            {% elif ind.confirmado %}
+                                <span class="badge bg-success">✓ Confirmado</span>
+                            {% elif ind.foi_editado_pelo_director %}
+                                <span class="badge bg-warning text-dark">✎ Editado</span>
+                            {% else %}
+                                <span class="badge bg-secondary">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if ciclo.estado == 'revisto' and (ind.foi_editado_pelo_director or ind.propor_eliminacao or ind.notas_director) %}
+                    <tr class="table-light">
+                        <td colspan="7">
+                            <small>
+                                {% if ind.notas_director %}
+                                <strong>Notas do Director:</strong> {{ ind.notas_director }}<br>
+                                {% endif %}
+                                {% if ind.propor_eliminacao %}
+                                <strong>Justificação para eliminação:</strong> {{ ind.justificacao_eliminacao }}
+                                {% endif %}
+                            </small>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Ciclo - MCI Indicadores{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h1>Criar Novo Ciclo de Revisão</h1>
+        <a href="{{ url_for('gestao.index') }}" class="btn btn-secondary">← Voltar</a>
+    </div>
+</div>
+
+<form method="POST" class="needs-validation">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label for="titulo" class="form-label">Título do Ciclo</label>
+                <input type="text" class="form-control" id="titulo" name="titulo" required placeholder="ex: Revisão MCI — Agosto 2026">
+            </div>
+        </div>
+    </div>
+
+    <h4 class="mt-4 mb-3">Indicadores por Grupo</h4>
+
+    {% for grupo in grupos %}
+    <div class="card mb-3">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">{{ grupo.grupo_id }} — {{ grupo.grupo_label }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Tipo</th>
+                            <th>Nome</th>
+                            <th>Meta</th>
+                            <th>Resultado Actual</th>
+                            <th>Projectos</th>
+                            <th>Notas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ind in grupo.indicadores %}
+                        <tr>
+                            <td><small>{{ ind.codigo }}</small></td>
+                            <td><small>{{ 'Monitoria' if ind.tipo == 'M' else 'Avaliação' }}</small></td>
+                            <td><small>{{ ind.nome }}</small></td>
+                            <td><small>{{ ind.meta }}</small></td>
+                            <td>
+                                <input type="text" class="form-control form-control-sm"
+                                       name="resultado_actual_{{ ind.codigo }}"
+                                       placeholder="—">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control form-control-sm"
+                                       name="projectos_{{ ind.codigo }}"
+                                       placeholder="—">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control form-control-sm"
+                                       name="notas_equipa_{{ ind.codigo }}"
+                                       placeholder="—">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary btn-lg">Criar Ciclo</button>
+        <a href="{{ url_for('gestao.index') }}" class="btn btn-secondary btn-lg">Cancelar</a>
+    </div>
+</form>
+{% endblock %}

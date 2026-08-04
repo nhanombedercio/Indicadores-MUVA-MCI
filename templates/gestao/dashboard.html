@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - MCI Indicadores{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        border-left: 4px solid #007bff;
+        border-radius: 0.25rem;
+    }
+    .stat-card.success { border-left-color: #28a745; }
+    .stat-card.warning { border-left-color: #ffc107; }
+    .stat-card.danger { border-left-color: #dc3545; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Dashboard — MCI Indicadores</h1>
+
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <h6 class="text-muted">Total de Ciclos</h6>
+                <h2>{{ total_ciclos }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stat-card success">
+            <div class="card-body text-center">
+                <h6 class="text-muted">Revistos</h6>
+                <h2>{{ ciclos_revistos }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stat-card warning">
+            <div class="card-body text-center">
+                <h6 class="text-muted">Pendentes</h6>
+                <h2>{{ ciclos_pendentes }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stat-card success">
+            <div class="card-body text-center">
+                <h6 class="text-muted">Confirmados</h6>
+                <h2>{{ confirmados_total }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stat-card danger">
+            <div class="card-body text-center">
+                <h6 class="text-muted">Eliminação</h6>
+                <h2>{{ propostas_eliminacao }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stat-card warning">
+            <div class="card-body text-center">
+                <h6 class="text-muted">Editados</h6>
+                <h2>{{ editados_total }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Indicadores por Tipo</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="tipoChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+
+    {% if ultimo_ciclo_revisto and confirmacao_por_grupo %}
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Confirmação por Grupo (Último Ciclo Revisto)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="confirmacaoChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="eliminacao-tab" data-bs-toggle="tab" data-bs-target="#eliminacao" type="button" role="tab">Propostas de Eliminação</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="edicoes-tab" data-bs-toggle="tab" data-bs-target="#edicoes" type="button" role="tab">Edições do Director</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="resultados-tab" data-bs-toggle="tab" data-bs-target="#resultados" type="button" role="tab">Resultados Registados</button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="eliminacao" role="tabpanel">
+        {% if propostas_eliminacao_list %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-danger">
+                    <tr>
+                        <th>Código</th>
+                        <th>Nome</th>
+                        <th>Justificação</th>
+                        <th>Ciclo</th>
+                        <th>Director</th>
+                        <th>Data</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in propostas_eliminacao_list %}
+                    <tr>
+                        <td><strong>{{ item.codigo }}</strong></td>
+                        <td>{{ item.nome }}</td>
+                        <td>{{ item.justificacao }}</td>
+                        <td>{{ item.ciclo }}</td>
+                        <td>{{ item.director }}</td>
+                        <td>{{ item.data }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">Nenhuma proposta de eliminação</p>
+        {% endif %}
+    </div>
+
+    <div class="tab-pane fade" id="edicoes" role="tabpanel">
+        {% if edicoes_list %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-warning">
+                    <tr>
+                        <th>Código</th>
+                        <th>Nome Original</th>
+                        <th>Nome Proposto</th>
+                        <th>Meta Original</th>
+                        <th>Meta Proposta</th>
+                        <th>Ciclo</th>
+                        <th>Director</th>
+                        <th>Data</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in edicoes_list %}
+                    <tr>
+                        <td><strong>{{ item.codigo }}</strong></td>
+                        <td>{{ item.nome_original }}</td>
+                        <td>{{ item.nome_novo }}</td>
+                        <td>{{ item.meta_original }}</td>
+                        <td>{{ item.meta_nova }}</td>
+                        <td>{{ item.ciclo }}</td>
+                        <td>{{ item.director }}</td>
+                        <td>{{ item.data }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">Nenhuma edição registada</p>
+        {% endif %}
+    </div>
+
+    <div class="tab-pane fade" id="resultados" role="tabpanel">
+        {% if resultados_list %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-info">
+                    <tr>
+                        <th>Código</th>
+                        <th>Nome</th>
+                        <th>Meta</th>
+                        <th>Resultado</th>
+                        <th>Ciclo</th>
+                        <th>Data</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in resultados_list %}
+                    <tr>
+                        <td><strong>{{ item.codigo }}</strong></td>
+                        <td>{{ item.nome }}</td>
+                        <td>{{ item.meta }}</td>
+                        <td>{{ item.resultado }}</td>
+                        <td>{{ item.ciclo }}</td>
+                        <td>{{ item.data }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">Nenhum resultado registado</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    const tipoData = {
+        M: {{ indicadores_tipo.get('M', 0) }},
+        A: {{ indicadores_tipo.get('A', 0) }}
+    };
+
+    const tipoCtx = document.getElementById('tipoChart').getContext('2d');
+    new Chart(tipoCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Monitoria', 'Avaliação'],
+            datasets: [{
+                data: [tipoData.M, tipoData.A],
+                backgroundColor: ['#0dcaf0', '#198754']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    {% if ultimo_ciclo_revisto and confirmacao_por_grupo %}
+    const confirmacaoData = {
+        labels: [{% for grupo_id in confirmacao_por_grupo.keys() %}'{{ grupo_id }}'{{ "," if not loop.last }}{% endfor %}],
+        confirmados: [{% for grupo_id, dados in confirmacao_por_grupo.items() %}{{ dados.confirmados }}{{ "," if not loop.last }}{% endfor %}],
+        total: [{% for grupo_id, dados in confirmacao_por_grupo.items() %}{{ dados.total }}{{ "," if not loop.last }}{% endfor %}]
+    };
+
+    const confirmacaoCtx = document.getElementById('confirmacaoChart').getContext('2d');
+    new Chart(confirmacaoCtx, {
+        type: 'bar',
+        data: {
+            labels: confirmacaoData.labels,
+            datasets: [
+                {
+                    label: 'Confirmados',
+                    data: confirmacaoData.confirmados,
+                    backgroundColor: '#198754'
+                },
+                {
+                    label: 'Por confirmar',
+                    data: confirmacaoData.total.map((t, i) => t - confirmacaoData.confirmados[i]),
+                    backgroundColor: '#e2e3e5'
+                }
+            ]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                x: { stacked: true },
+                y: { stacked: true }
+            },
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+    {% endif %}
+</script>
+{% endblock %}

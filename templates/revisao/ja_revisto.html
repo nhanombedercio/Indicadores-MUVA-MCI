@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Revisão Finalizada - MCI Indicadores{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body py-5">
+                <h1 class="text-center mb-4">✓ Revisão Finalizada</h1>
+
+                <div class="alert alert-info">
+                    <strong>{{ ciclo.titulo }}</strong><br>
+                    Esta revisão já foi submetida em {{ ciclo.data_revisao.strftime('%d/%m/%Y às %H:%M') }} por <strong>{{ ciclo.nome_director }}</strong>.
+                </div>
+
+                <h6>Resumo da Revisão:</h6>
+                <ul>
+                    <li>Total de Indicadores: <strong>{{ ciclo.indicadores|length }}</strong></li>
+                    <li>Confirmados: <strong>{{ ciclo.indicadores|selectattr('confirmado')|list|length }}</strong></li>
+                    <li>Editados: <strong>{{ ciclo.indicadores|selectattr('foi_editado_pelo_director')|list|length }}</strong></li>
+                    <li>Propostos para Eliminação: <strong>{{ ciclo.indicadores|selectattr('propor_eliminacao')|list|length }}</strong></li>
+                </ul>
+
+                {% if ciclo.observacoes_director %}
+                <hr>
+                <h6>Observações Gerais:</h6>
+                <p>{{ ciclo.observacoes_director }}</p>
+                {% endif %}
+
+                <hr>
+                <p class="text-muted text-center">
+                    A equipa MUVA/MCI foi notificada desta revisão.<br>
+                    <small>Não pode ser feita uma nova revisão para este ciclo.</small>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

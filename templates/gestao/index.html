@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Ciclos de Revisão - MCI Indicadores{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Ciclos de Revisão</h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('gestao.ciclo_novo') }}" class="btn btn-success">+ Novo Ciclo</a>
+        <a href="{{ url_for('gestao.exportar_todos') }}" class="btn btn-info">📊 Exportar Todos</a>
+    </div>
+</div>
+
+<div class="btn-group mb-3" role="group">
+    <a href="{{ url_for('gestao.index', estado='todos') }}" class="btn btn-outline-primary {% if estado == 'todos' %}active{% endif %}">Todos</a>
+    <a href="{{ url_for('gestao.index', estado='pendente') }}" class="btn btn-outline-primary {% if estado == 'pendente' %}active{% endif %}">Pendentes</a>
+    <a href="{{ url_for('gestao.index', estado='revisto') }}" class="btn btn-outline-primary {% if estado == 'revisto' %}active{% endif %}">Revistos</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Título</th>
+                <th>Estado</th>
+                <th>Director</th>
+                <th>Data Criação</th>
+                <th>Acções</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if ciclos.items %}
+                {% for ciclo in ciclos.items %}
+                    <tr>
+                        <td><strong>{{ ciclo.titulo }}</strong></td>
+                        <td>
+                            {% if ciclo.estado == 'revisto' %}
+                                <span class="badge bg-success">Revisto</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Pendente</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ ciclo.nome_director or '—' }}</td>
+                        <td>{{ ciclo.criado_em.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>
+                            <a href="{{ url_for('gestao.ciclo_detalhe', id=ciclo.id) }}" class="btn btn-sm btn-primary">Ver</a>
+                            {% if ciclo.estado == 'pendente' %}
+                                <a href="{{ url_for('gestao.ciclo_link', id=ciclo.id) }}" class="btn btn-sm btn-info">Link</a>
+                                <a href="{{ url_for('gestao.ciclo_editar', id=ciclo.id) }}" class="btn btn-sm btn-warning">Editar</a>
+                            {% endif %}
+                            <a href="{{ url_for('gestao.ciclo_exportar', id=ciclo.id) }}" class="btn btn-sm btn-success">Excel</a>
+                            <form action="{{ url_for('gestao.ciclo_apagar', id=ciclo.id) }}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tem a certeza?')">Apagar</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted">Nenhum ciclo encontrado</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+{% if ciclos.pages > 1 %}
+<nav aria-label="Paginação">
+    <ul class="pagination justify-content-center">
+        {% if ciclos.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('gestao.index', page=ciclos.prev_num, estado=estado) }}">Anterior</a>
+            </li>
+        {% endif %}
+
+        {% for page_num in ciclos.iter_pages() %}
+            {% if page_num %}
+                {% if page_num == ciclos.page %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('gestao.index', page=page_num, estado=estado) }}">{{ page_num }}</a>
+                    </li>
+                {% endif %}
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            {% endif %}
+        {% endfor %}
+
+        {% if ciclos.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('gestao.index', page=ciclos.next_num, estado=estado) }}">Próxima</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
